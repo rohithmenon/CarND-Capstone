@@ -2,9 +2,11 @@
 
 import rospy
 from geometry_msgs.msg import PoseStamped
+from scipy.spatial import KDTree
 from styx_msgs.msg import Lane, Waypoint
 
 import math
+import numpy as np
 
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
@@ -36,17 +38,53 @@ class WaypointUpdater(object):
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
-        # TODO: Add other member variables you need below
+        self.base_waypoints = None
+        self.waypoints_2d = None
+        self.pose = None
+        self.waypoint_tree = None
+
+        rospy.Timer(rospy.Duration(1.0 / 50.0), lambda event: self.tick())
 
         rospy.spin()
 
+    def tick(self):
+        if self.pose and self.base_waypoints:
+            closest_waypoint_idx = self.get_closest_waypoint_idx()
+            self.publish_waypoints(closest_waypoint_idx)
+
+    def publish_waypoints(self, closest_idx):
+        lane = Lane()
+        lane.header = self.base_waypoints.header
+        lane.waypoints = self.base_waypoints.waypoints[closest_idx:closest_idx + LOOKAHEAD_WPS]
+        self.final_waypoints_pub.publish(lane)
+
     def pose_cb(self, msg):
-        # TODO: Implement
-        pass
+        self.pose = msg
 
     def waypoints_cb(self, waypoints):
-        # TODO: Implement
-        pass
+        self.base_waypoints = waypoints
+        if not self.waypoints_2d:
+            self.waypoints_2d = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in waypoints.waypoints]
+            self.waypoint_tree = KDTree(self.waypoints_2d)
+
+    def get_closest_waypoint_idx(self):
+        x = self.pose.pose.position.x
+        y = self.pose.pose.position.y
+        closest_idx = self.waypoint_tree.query([x, y], 1)[1]
+
+        closest_coord = self.waypoints_2d[closest_idx]
+        prev_coord = self.waypoints_2d[closest_idx - 1]
+
+        a = np.array(prev_coord)
+        b = np.array(closest_coord)
+        c = np.array([x, y])
+
+        dot_prod = np.dot(b - a, c - b)
+
+        if dot_prod > 0:
+            return (closest_idx + 1) % len(self.waypoints_2d)
+        return closest_idx
+
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
