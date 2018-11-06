@@ -49,7 +49,7 @@ class WaypointUpdater(object):
         rospy.spin()
 
     def tick(self):
-        if self.pose and self.base_waypoints:
+        if self.pose and self.base_waypoints and self.waypoint_tree:
             self.final_waypoints_pub.publish(self.generate_lane())
 
     def generate_lane(self):
@@ -57,9 +57,9 @@ class WaypointUpdater(object):
 
         closest_idx = self.get_closest_waypoint_idx()
         farthest_idx = closest_idx + LOOKAHEAD_WPS
-        base_waypoints = self.base_waypoints[closest_idx:farthest_idx]
+        base_waypoints = self.base_waypoints.waypoints[closest_idx:farthest_idx]
 
-        if self.stopline_wp_idx == -1 or self.stopline_wp_idx >= farthest_idx:
+        if self.stopline_wp_idx == -1 or (self.stopline_wp_idx >= farthest_idx):
             lane.waypoints = base_waypoints
         else:
             lane.waypoints = self.decelerate_waypoints(base_waypoints, closest_idx)
@@ -74,7 +74,7 @@ class WaypointUpdater(object):
 
             stop_idx = max(self.stopline_wp_idx - closest_idx - 2, 0)
             dist = self.distance(waypoints, i, stop_idx)
-            vel = math.sqrt(2 * MAX_DECEL * dist)
+            vel = 2 * MAX_DECEL * dist
             if vel < 1.0:
                 vel = 0.0
 

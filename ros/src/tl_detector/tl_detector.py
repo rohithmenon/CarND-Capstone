@@ -157,7 +157,7 @@ class TLDetector(object):
                 if d >=0 and d < diff:
                     diff = d
                     closest_light = light
-                    line_wp_idx = i
+                    line_wp_idx = tmp_wp_idx
 
         if closest_light:
             state = self.get_light_state(closest_light)
