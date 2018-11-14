@@ -4,7 +4,7 @@ from styx_msgs.msg import TrafficLight
 
 class TLClassifier(object):
     def __init__(self):
-        PATH_TO_MODEL = 'frozen_inference_graph.pb'
+        PATH_TO_MODEL = '/home/rohith/carnd/CarND-Capstone/ros/src/tl_detector/light_classification/frozen_inference_graph.pb'
         self.detection_graph = tf.Graph()
         with self.detection_graph.as_default():
             od_graph_def = tf.GraphDef()
