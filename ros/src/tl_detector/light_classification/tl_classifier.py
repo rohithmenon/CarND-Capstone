@@ -1,10 +1,13 @@
+import os
 import numpy as np
+import rospkg
 import tensorflow as tf
 from styx_msgs.msg import TrafficLight
 
 class TLClassifier(object):
     def __init__(self):
-        PATH_TO_MODEL = '/home/rohith/carnd/CarND-Capstone/ros/src/tl_detector/light_classification/frozen_inference_graph.pb'
+        rospack = rospkg.RosPack()
+        PATH_TO_MODEL = os.path.join(rospack.get_path('tl_detector'), 'light_classification/frozen_inference_graph.pb')
         self.detection_graph = tf.Graph()
         with self.detection_graph.as_default():
             od_graph_def = tf.GraphDef()
