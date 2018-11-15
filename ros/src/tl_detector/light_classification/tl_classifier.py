@@ -7,7 +7,7 @@ from styx_msgs.msg import TrafficLight
 class TLClassifier(object):
     def __init__(self):
         rospack = rospkg.RosPack()
-        PATH_TO_MODEL = os.path.join(rospack.get_path('tl_detector'), 'light_classification/frozen_inference_graph.pb')
+        PATH_TO_MODEL = os.path.join(rospack.get_path('tl_detector'), 'light_classification/frozen_inference_graph.ssd_inception.pb')
         self.detection_graph = tf.Graph()
         with self.detection_graph.as_default():
             od_graph_def = tf.GraphDef()

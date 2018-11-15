@@ -9,15 +9,14 @@ import zipfile
 from distutils.version import StrictVersion
 from collections import defaultdict
 from io import StringIO
-from matplotlib import pyplot as plt
 from PIL import Image
 
 # This is needed since the notebook is stored in the object_detection folder.
 sys.path.append("..")
 from object_detection.utils import ops as utils_ops
 
-if StrictVersion(tf.__version__) < StrictVersion('1.9.0'):
-  raise ImportError('Please upgrade your TensorFlow installation to v1.9.* or later!')
+#if StrictVersion(tf.__version__) < StrictVersion('1.9.0'):
+#  raise ImportError('Please upgrade your TensorFlow installation to v1.9.* or later!')
 
 from utils import label_map_util
 
@@ -30,7 +29,7 @@ DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
 PATH_TO_FROZEN_GRAPH = MODEL_NAME + '/frozen_inference_graph.pb'
 
 # List of the strings that is used to add correct label for each box.
-PATH_TO_LABELS = os.path.join('data', 'mscoco_label_map.pbtxt')
+PATH_TO_LABELS = os.path.join('/home/rohith.menon/models/research/object_detection/data', 'mscoco_label_map.pbtxt')
 
 opener = urllib.request.URLopener()
 opener.retrieve(DOWNLOAD_BASE + MODEL_FILE, MODEL_FILE)
@@ -110,8 +109,6 @@ from tqdm import tqdm
 
 LabelInfo = collections.namedtuple('LabelInfo', 'path label boxes')
 
-PATH_TO_TEST_IMAGES_DIR = '/home/rohith/carnd/CarND-Capstone/ros/data/bag_and_sim'
-TEST_IMAGE_PATHS = [os.path.join(PATH_TO_TEST_IMAGES_DIR, f) for f in os.listdir(PATH_TO_TEST_IMAGES_DIR) if f.endswith('jpg')]
 label_data = []
 
 for label in range(3):

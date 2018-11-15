@@ -1,4 +1,6 @@
 import json
+import os
+import re
 import tensorflow as tf
 from object_detection.utils import dataset_util
 
@@ -16,7 +18,7 @@ def create_tf_example(label_and_data_info):
   # TODO START: Populate the following variables from your example.
   height = 600 # Image height
   width = 800 # Image width
-  filename = label_and_data_info['path'] # Filename of the image. Empty if image is not from file
+  filename = os.path.join('/home/rohith.menon/CarND-Capstone', label_and_data_info['path']) # Filename of the image. Empty if image is not from file
   encoded_image_data = None # Encoded image bytes
   with tf.gfile.GFile(filename, 'rb') as fid:
     encoded_image_data = fid.read()
@@ -36,7 +38,8 @@ def create_tf_example(label_and_data_info):
       xmaxs.append(xmax)
       ymins.append(ymin)
       ymaxs.append(ymax)
-  cls = label_and_data_info['label']
+  
+  cls = int(label_and_data_info['path'].split('/')[3])
   classes_text = [CLASS_TEXT[cls].encode('utf8')] * num_boxes # List of string class name of bounding box (1 per box)
   classes = [cls + 1] * num_boxes # List of integer class id of bounding box (1 per box)
   # TODO END

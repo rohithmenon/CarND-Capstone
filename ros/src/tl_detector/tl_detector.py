@@ -125,9 +125,8 @@ class TLDetector(object):
 
         #Get classification
 
-        if self.img_idx % 5 == 0 or self.last_predicted == None:
-            #predicted = self.light_classifier.get_classification(cv_image)
-            predicted = light.state
+        if self.img_idx % 3 == 0 or self.last_predicted == None:
+            predicted = self.light_classifier.get_classification(cv_image)
             self.last_predicted = predicted
         else:
             predicted = self.last_predicted
