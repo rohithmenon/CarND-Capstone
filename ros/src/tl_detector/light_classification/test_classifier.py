@@ -38,20 +38,13 @@ class TLClassifier(object):
             (boxes, scores, classes, num) = self.sess.run(
                 [self.d_boxes, self.d_scores, self.d_classes, self.num_d],
                 feed_dict={self.image_tensor: img_expanded})
-        red = len(classes[(classes == 1) & (scores >= 0.8)])
-        yellow = len(classes[(classes == 2) & (scores >= 0.8)])
-        green = len(classes[(classes == 3) & (scores >= 0.8)])
-        cnts = np.array([red, yellow, green])
-        idx = np.argmax(cnts)
-        if cnts[idx] > 0:
-            if idx == 0:
-                return "red"
-            elif idx == 1:
-                return "yellow"
-            else:
-                return "green"
+        cls = classes[0, 0]
+        if cls == 1:
+            return "red"
+        elif cls == 2:
+            return "yellow"
         else:
-            return "unknown"
+            return "green"
 
 def load_image_into_numpy_array(image):
   (im_width, im_height) = image.size
@@ -64,6 +57,7 @@ all_paths = []
 for i in range(3):
     path = os.path.join(IMG_PATH, str(i))
     all_paths.extend([os.path.join(path, f) for f in os.listdir(path) if f.endswith('jpg') and f.startswith('b')])
+#all_paths = ['/tmp/test_imgs/{}.jpg'.format(i) for i in range(28)]
 
 random.shuffle(all_paths)
 

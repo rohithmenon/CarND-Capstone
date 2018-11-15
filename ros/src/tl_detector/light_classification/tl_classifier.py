@@ -38,17 +38,12 @@ class TLClassifier(object):
             (boxes, scores, classes, num) = self.sess.run(
                 [self.d_boxes, self.d_scores, self.d_classes, self.num_d],
                 feed_dict={self.image_tensor: img_expanded})
-        red = len(classes[(classes == 1) & (scores >= 0.8)])
-        yellow = len(classes[(classes == 2) & (scores >= 0.8)])
-        green = len(classes[(classes == 3) & (scores >= 0.8)])
-        cnts = np.array([red, yellow, green])
-        idx = np.argmax(cnts)
-        if cnts[idx] > 0:
-            if idx == 0:
-                return TrafficLight.RED
-            elif idx == 1:
-                return TrafficLight.YELLOW
-            else:
-                return TrafficLight.GREEN
+        cls = classes[0, 0]
+        if cls == 1:
+            return TrafficLight.RED
+        elif cls == 2:
+            return TrafficLight.YELLOW
+        elif cls == 3:
+            return TrafficLight.GREEN
         else:
             return TrafficLight.UNKNOWN

@@ -122,9 +122,9 @@ class TLDetector(object):
             return False
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+        cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
 
         #Get classification
-
         if self.img_idx % 3 == 0 or self.last_predicted == None:
             predicted = self.light_classifier.get_classification(cv_image)
             self.last_predicted = predicted
@@ -147,10 +147,10 @@ class TLDetector(object):
 
         # List of positions that correspond to the line to stop in front of for a given intersection
         stop_line_positions = self.config['stop_line_positions']
+        diff = len(self.waypoints.waypoints)
         if(self.pose):
             car_wp_idx = self.get_closest_waypoint(self.pose.pose.position.x, self.pose.pose.position.y)
 
-            diff = len(self.waypoints.waypoints)
             for i, light in enumerate(self.lights):
                 line = stop_line_positions[i]
                 tmp_wp_idx = self.get_closest_waypoint(line[0], line[1])
@@ -160,7 +160,7 @@ class TLDetector(object):
                     closest_light = light
                     line_wp_idx = tmp_wp_idx
 
-        if closest_light:
+        if closest_light and diff < 200:
             state = self.get_light_state(closest_light)
             return line_wp_idx, state
 
