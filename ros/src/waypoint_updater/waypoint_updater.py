@@ -8,6 +8,7 @@ from styx_msgs.msg import Lane, Waypoint
 
 import math
 import numpy as np
+import tf
 
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
@@ -92,13 +93,32 @@ class WaypointUpdater(object):
             self.waypoints_2d = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in waypoints.waypoints]
             self.waypoint_tree = KDTree(self.waypoints_2d)
 
+    def get_direction(self):
+        orientation = self.pose.pose.orientation
+        euler = tf.transformations.euler_from_quaternion([orientation.x,
+                                                         orientation.y,
+                                                         orientation.z,
+                                                         orientation.w])
+        yaw = euler[2]
+        pos = self.pose.pose.position  
+        cur_pos_2d = np.array([pos.x, pos.y])
+        next_pos_2d = cur_pos_2d + np.array([np.cos(yaw), np.sin(yaw)]) 
+        cur_closest_idx = self.waypoint_tree.query(cur_pos_2d, 1)[1]
+        prev_wpt = np.array(self.waypoints_2d[cur_closest_idx - 1])
+        if np.linalg.norm(cur_pos_2d - prev_wpt) < np.linalg.norm(next_pos_2d - prev_wpt):
+            return 1
+        else:
+            return -1
+
     def get_closest_waypoint_idx(self):
         x = self.pose.pose.position.x
         y = self.pose.pose.position.y
         closest_idx = self.waypoint_tree.query([x, y], 1)[1]
 
+        num_waypts = len(self.waypoints_2d)
         closest_coord = self.waypoints_2d[closest_idx]
-        prev_coord = self.waypoints_2d[closest_idx - 1]
+        prev_idx = (closest_idx + (-1 if self.get_direction() > 0 else 1)) % num_waypts
+        prev_coord = self.waypoints_2d[prev_idx]
 
         a = np.array(prev_coord)
         b = np.array(closest_coord)

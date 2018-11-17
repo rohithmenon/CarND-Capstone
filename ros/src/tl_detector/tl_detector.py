@@ -8,6 +8,7 @@ from styx_msgs.msg import Lane
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from light_classification.tl_classifier import TLClassifier
+import numpy as np
 import tf
 import cv2
 import yaml
@@ -91,6 +92,23 @@ class TLDetector(object):
             self.upcoming_red_light_pub.publish(Int32(self.last_wp))
         self.state_count += 1
 
+    def get_direction(self):
+        orientation = self.pose.pose.orientation
+        euler = tf.transformations.euler_from_quaternion([orientation.x,
+                                                         orientation.y,
+                                                         orientation.z,
+                                                         orientation.w])
+        yaw = euler[2]
+        pos = self.pose.pose.position  
+        cur_pos_2d = np.array([pos.x, pos.y])
+        next_pos_2d = cur_pos_2d + np.array([np.cos(yaw), np.sin(yaw)]) 
+        cur_closest_idx = self.waypoint_tree.query(cur_pos_2d, 1)[1]
+        prev_wpt = np.array(self.waypoints_2d[cur_closest_idx - 1])
+        if np.linalg.norm(cur_pos_2d - prev_wpt) < np.linalg.norm(next_pos_2d - prev_wpt):
+            return 1
+        else:
+            return -1
+
     def get_closest_waypoint(self, x, y):
         """Identifies the closest path waypoint to the given position
             https://en.wikipedia.org/wiki/Closest_pair_of_points_problem
@@ -103,6 +121,20 @@ class TLDetector(object):
 
         """
         closest_idx = self.waypoint_tree.query([x, y], 1)[1]
+
+        num_waypts = len(self.waypoints_2d)
+        closest_coord = self.waypoints_2d[closest_idx]
+        prev_idx = (closest_idx + (-1 if self.get_direction() > 0 else 1)) % num_waypts
+        prev_coord = self.waypoints_2d[prev_idx]
+
+        a = np.array(prev_coord)
+        b = np.array(closest_coord)
+        c = np.array([x, y])
+
+        dot_prod = np.dot(b - a, c - b)
+
+        if dot_prod > 0:
+            return (closest_idx + 1) % len(self.waypoints_2d)
         return closest_idx
 
     def get_light_state(self, light):
@@ -130,7 +162,6 @@ class TLDetector(object):
             self.last_predicted = predicted
         else:
             predicted = self.last_predicted
-        rospy.loginfo('Actual: {}, Predicted: {}'.format(light.state, predicted))
         return predicted
 
     def process_traffic_lights(self):
@@ -147,19 +178,21 @@ class TLDetector(object):
 
         # List of positions that correspond to the line to stop in front of for a given intersection
         stop_line_positions = self.config['stop_line_positions']
-        diff = len(self.waypoints.waypoints)
-        if(self.pose):
+        num_wpts = len(self.waypoints_2d)
+        diff = num_wpts
+        if self.pose:
             car_wp_idx = self.get_closest_waypoint(self.pose.pose.position.x, self.pose.pose.position.y)
 
             for i, light in enumerate(self.lights):
                 line = stop_line_positions[i]
                 tmp_wp_idx = self.get_closest_waypoint(line[0], line[1])
-                d = tmp_wp_idx - car_wp_idx
+                d = (tmp_wp_idx - car_wp_idx) % num_wpts 
+                if self.get_direction() < 0:
+                    d = (car_wp_idx - tmp_wp_idx) % num_wpts
                 if d >=0 and d < diff:
                     diff = d
                     closest_light = light
                     line_wp_idx = tmp_wp_idx
-
         if closest_light and diff < 200:
             state = self.get_light_state(closest_light)
             return line_wp_idx, state
